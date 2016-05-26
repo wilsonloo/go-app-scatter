@@ -68,10 +68,10 @@ func main() {
 			starttimeint := (int)(tnow.Sub(baseTime).Seconds() * 1000000)
 
 			fmt.Println("index:", index)
-			token := postLoginTest()
-			//	fmt.Println("token:", token)
-			FdMap := getPostData(baseurl+"/UploadResData", getPostUploadResData(token))
-			fmt.Println("FdMap:", index, ".", FdMap)
+
+			///////////////////////////////////////
+			TestMutexSpinLock()
+			///////////////////////////////////////
 			tmptime := time.Now()
 			subdur := tmptime.Sub(tnow)
 			tmpint := (int)(subdur.Seconds() * 1000)
