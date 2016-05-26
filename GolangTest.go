@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	//	"github.com/ant0ine/go-json-rest/rest"
 	"io/ioutil"
+    "sync"
 	//	"log"
 	//	"net"
 	"net/http"
-	"strconv"
 	"strings"
+    "container/list"
 	"time"
 	//	"strings"
 	//	"sqladapter"
@@ -54,10 +55,8 @@ func main() {
 	//openDbString("select code,data,CONVERT(CHAR(23), createtime, 121) as createtime,CONVERT(CHAR(23), updatetime, 121) as updatetime,groupCode,title,seq,valid,commentCount from ATRes ")
 	CFTablesMap = loadConfig()
 	//	test2()
-	baseurl := CFTablesMap["url"].(string)
-	N, _ := strconv.Atoi(CFTablesMap["count"].(string))
 	baseTime = time.Now()
-	//	var N =
+	var N = 10000
 	sem := make(chan string, N)
 	for i := 0; i < N; i++ {
 		//		fmt.Println("index:", i)
@@ -70,6 +69,7 @@ func main() {
 			fmt.Println("index:", index)
 
 			///////////////////////////////////////
+            TestMutexSpinLock()
 
 			///////////////////////////////////////
 			tmptime := time.Now()
@@ -99,7 +99,7 @@ func main() {
 		}
 	}
 	outString += "]"
-	fmt.Println("max:", outString)
+	// fmt.Println("max:", outString)
 	//	writeFileWithData(".config/data.json", outString, N)
 	writeFileWithData("./config/output.html", outString, N)
 }
@@ -304,6 +304,7 @@ func writeFileWithData(filename string, data string, n int) {
 
 	defer dstFile.Close()
 	dstFile.WriteString(tmpstring)
+    fmt.Println("writeten to ", fileName)
 }
 
 /**读取json文件内容转换层map*/
@@ -402,7 +403,7 @@ func pop_redis_client() bool {
 	reIDsMutex.Lock()
 	defer reIDsMutex.Unlock()
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10000; i++ {
 		k := 3
 		k++
 	}
@@ -422,7 +423,7 @@ func push_redis_client() {
 	reIDsMutex.Lock()
 	defer reIDsMutex.Unlock()
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10000; i++ {
 		k := 3
 		k++
 	}
