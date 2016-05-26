@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	//	"github.com/ant0ine/go-json-rest/rest"
 	"io/ioutil"
-    "sync"
+	"sync"
 	//	"log"
 	//	"net"
+	"container/list"
 	"net/http"
 	"strings"
-    "container/list"
 	"time"
 	//	"strings"
 	//	"sqladapter"
@@ -33,6 +33,7 @@ import (
 	//	"log"
 	//	"net/http"
 	//	"net/url"
+	"github.com/garyburd/redigo/redis"
 )
 
 /**存放配置数据key-value形式*/
@@ -46,67 +47,69 @@ func main() {
 	subdur := tnow.Sub(tmptime)
 	fmt.Printf("subdur: %f,%s ", subdur.Nanoseconds(), tmptime, " ")
 	datastr := fmt.Sprintf("%d%d%d%d%d%d", tnow.Year(), tnow.Month(), tnow.Day(), tnow.Hour(), tnow.Minute(), tnow.Second())
+	/*
+	   	fmt.Println(time.Now().Format("2006-01-02_15:04:05"), "   ", datastr)
+	   	//	test0()
+	   	//	test1()rtrim(cast(data as CHAR(200))) as datacopy
+	   	//	returndata := openDbString("select top 1 rtrim(cast(data as CHAR(200))) as datacopy,data from ATRes ")
+	   	//	fmt.Println("result:", returndata)
+	   	//openDbString("select code,data,CONVERT(CHAR(23), createtime, 121) as createtime,CONVERT(CHAR(23), updatetime, 121) as updatetime,groupCode,title,seq,valid,commentCount from ATRes ")
+	   	CFTablesMap = loadConfig()
+	   	//	test2()
+	   	baseTime = time.Now()
+	   	var N = 10000
+	   	sem := make(chan string, N)
+	   	for i := 0; i < N; i++ {
+	   		//		fmt.Println("index:", i)
+	   		//		testLoginAndPost(i)
+	   		go func(index int) {
 
-	fmt.Println(time.Now().Format("2006-01-02_15:04:05"), "   ", datastr)
-	//	test0()
-	//	test1()rtrim(cast(data as CHAR(200))) as datacopy
-	//	returndata := openDbString("select top 1 rtrim(cast(data as CHAR(200))) as datacopy,data from ATRes ")
-	//	fmt.Println("result:", returndata)
-	//openDbString("select code,data,CONVERT(CHAR(23), createtime, 121) as createtime,CONVERT(CHAR(23), updatetime, 121) as updatetime,groupCode,title,seq,valid,commentCount from ATRes ")
-	CFTablesMap = loadConfig()
-	//	test2()
-	baseTime = time.Now()
-	var N = 10000
-	sem := make(chan string, N)
-	for i := 0; i < N; i++ {
-		//		fmt.Println("index:", i)
-		//		testLoginAndPost(i)
-		go func(index int) {
+	   			tnow := time.Now()
+	   			starttimeint := (int)(tnow.Sub(baseTime).Seconds() * 1000000)
 
-			tnow := time.Now()
-			starttimeint := (int)(tnow.Sub(baseTime).Seconds() * 1000000)
+	   			fmt.Println("index:", index)
 
-			fmt.Println("index:", index)
+	   			///////////////////////////////////////
+	               TestMutexSpinLock()
 
-			///////////////////////////////////////
-            TestMutexSpinLock()
+	   			///////////////////////////////////////
+	   			tmptime := time.Now()
+	   			subdur := tmptime.Sub(tnow)
+	   			tmpint := (int)(subdur.Seconds() * 1000)
+	   			fmt.Printf("subdur:  ", tmpint)
+	   			//			sem <- (fmt.Sprintf("%s,%d", tnow.Format("2006-01-02_15:04:05"), tmpint))
+	   			//			sem <- (fmt.Sprintf("'%d:%d',%d", tnow.Minute(), tnow.Second(), tmpint))
+	   			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
+	   		}(i)
+	   	}
+	   	//	var max = 0
+	   	outString := "["
+	   	for m := 0; m < N; m++ {
+	   		//		<-sem
+	   		tmp := <-sem
+	   		//		if tmp > max {
+	   		//			max = tmp
+	   		//		}
+	   		fmt.Println("FdMap:", tmp)
+	   		//		outString += fmt.Sprintf("[%d,%d]", m%50, tmp)
+	   		outString += fmt.Sprintf("[%s]", tmp)
+	   		if m == N-1 {
 
-			///////////////////////////////////////
-			tmptime := time.Now()
-			subdur := tmptime.Sub(tnow)
-			tmpint := (int)(subdur.Seconds() * 1000)
-			fmt.Printf("subdur:  ", tmpint)
-			//			sem <- (fmt.Sprintf("%s,%d", tnow.Format("2006-01-02_15:04:05"), tmpint))
-			//			sem <- (fmt.Sprintf("'%d:%d',%d", tnow.Minute(), tnow.Second(), tmpint))
-			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
-		}(i)
-	}
-	//	var max = 0
-	outString := "["
-	for m := 0; m < N; m++ {
-		//		<-sem
-		tmp := <-sem
-		//		if tmp > max {
-		//			max = tmp
-		//		}
-		fmt.Println("FdMap:", tmp)
-		//		outString += fmt.Sprintf("[%d,%d]", m%50, tmp)
-		outString += fmt.Sprintf("[%s]", tmp)
-		if m == N-1 {
-
-		} else {
-			outString += ","
-		}
-	}
-	outString += "]"
-	// fmt.Println("max:", outString)
-	//	writeFileWithData(".config/data.json", outString, N)
-	writeFileWithData("./config/output.html", outString, N)
+	   		} else {
+	   			outString += ","
+	   		}
+	   	}
+	   	outString += "]"
+	   	// fmt.Println("max:", outString)
+	   	//	writeFileWithData(".config/data.json", outString, N)
+	   	writeFileWithData("./config/output.html", outString, N)
+	*/
 }
 
 var correctCount = 0
 
-/**测试登录和post数据*/
+/*
+// 测试登录和post数据
 func testLoginAndPost(index int) {
 
 	//	fmt.Println("index:", index)
@@ -163,7 +166,7 @@ func postLoginTest() string {
 	return FdMap["token"].(string)
 }
 
-/**获取登录数据*/
+// **获取登录数据
 func getPostLoginData() string {
 
 	var jsonstr string
@@ -171,7 +174,7 @@ func getPostLoginData() string {
 	return jsonstr
 }
 
-/**封装测试数据，封装post数据*/
+// **封装测试数据，封装post数据
 func getPostUploadResData(token string) string {
 	var jsonstr string
 	jsonstr += "{\"KeyToken\":\"" + token + "\","
@@ -186,7 +189,7 @@ func getPostUploadResData(token string) string {
 	return jsonstr
 }
 
-/**封装测试数据*/
+// 封装测试数据
 func getTableData(tablename string) string {
 	var jsonstr string
 	jsonstr += "\"table\":\"" + tablename + "\","
@@ -200,7 +203,7 @@ func getTableData(tablename string) string {
 
 }
 
-/**封装测试数据*/
+// 封装测试数据
 func getTableRowData(tablename string) string {
 	var jsonstr string
 	if strings.EqualFold(tablename, "ATResData") {
@@ -224,9 +227,7 @@ func getTableRowData(tablename string) string {
 	return jsonstr
 }
 
-/**
-载入配置的json文件
-*/
+// 载入配置的json文件
 func loadConfig() map[string]interface{} {
 
 	CFTablesMap, err := readFile("./config/download.config")
@@ -246,7 +247,7 @@ func loadConfig() map[string]interface{} {
 	return CFTablesMap
 }
 
-/**获取GUID唯一值*/
+// 获取GUID唯一值
 func GetGuid() string {
 	b := make([]byte, 48)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
@@ -258,10 +259,7 @@ func GetGuid() string {
 	//    return GetMd5String(base64.URLEncoding.EncodeToString(b))
 }
 
-/**
-将输入结果写入文件，data表示要写入的html文件内容，n用来命名文件头的
-文件中存在%s用于写入数据代码
-**/
+// 将输入结果写入文件，data表示要写入的html文件内容，n用来命名文件头的 文件中存在%s用于写入数据代码
 func writeFileWithData(filename string, data string, n int) {
 	var tmpstring string
 	f, _ := os.OpenFile(filename, os.O_RDONLY, 0666)
@@ -304,10 +302,10 @@ func writeFileWithData(filename string, data string, n int) {
 
 	defer dstFile.Close()
 	dstFile.WriteString(tmpstring)
-    fmt.Println("writeten to ", fileName)
+	fmt.Println("writeten to ", fileName)
 }
 
-/**读取json文件内容转换层map*/
+// 读取json文件内容转换层map
 func readFile(filename string) (map[string]interface{}, error) {
 	FdMap := map[string]interface{}{}
 
@@ -323,9 +321,7 @@ func readFile(filename string) (map[string]interface{}, error) {
 	return FdMap, nil
 }
 
-/**
-字符串截取函数
-*/
+// 字符串截取函数
 func Substr(str string, start, length int) string {
 	rs := []rune(str)
 	rl := len(rs)
@@ -367,22 +363,21 @@ var (
 
 func reserve_redis_client_pool() {
 
-	/*
-		for i := 0; i < redisCount; i++ {
-			client := redis.NewClient(&redis.Options{
-				Addr:     fmt.Sprintf("127.0.0.1:6379"),
-				Password: "",
-				DB:       redisDb,
-			})
+	for i := 0; i < redisCount; i++ {
+		client := redis.NewClient(&redis.Options{
+			Addr:     fmt.Sprintf("127.0.0.1:6379"),
+			Password: "",
+			DB:       redisDb,
+		})
 
-			if client != nil {
-				fmt.Println("failed to create redis-client")
-				os.Exit(1)
-			}
-
-			reIDsClients.PushBack(client)
+		if client != nil {
+			fmt.Println("failed to create redis-client")
+			os.Exit(1)
 		}
-	*/
+
+		reIDsClients.PushBack(client)
+	}
+
 }
 
 func TestMutexSpinLock() {
@@ -403,18 +398,12 @@ func pop_redis_client() bool {
 	reIDsMutex.Lock()
 	defer reIDsMutex.Unlock()
 
-	for i := 0; i < 10000; i++ {
-		k := 3
-		k++
+	if reIDsClients.Len() == 0 {
+		reserve_redis_client_pool()
 	}
-	/*
-		if reIDsClients.Len() == 0 {
-			reserve_redis_client_pool()
-		}
 
-		client := reIDsClients.Front().Value.(*redis.Client)
-		reIDsClients.Remove(reIDsClients.Front())
-	*/
+	client := reIDsClients.Front().Value.(*redis.Client)
+	reIDsClients.Remove(reIDsClients.Front())
 
 	return true
 }
