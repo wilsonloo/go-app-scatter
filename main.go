@@ -1,37 +1,22 @@
 package main
 
 import (
-	"encoding/json"
-	//	"github.com/ant0ine/go-json-rest/rest"
-	"io/ioutil"
-	"sync"
-	//	"log"
-	//	"net"
+	"bufio"
 	"container/list"
-	"strings"
-	"time"
-	//	"strings"
-	//	"sqladapter"
-	//	"database/sql"
-	//	"encoding/json"
-	"fmt"
-	//	"go-simplejson" // for json get
-	_ "odbc/driver"
-	//	"sync"
-	//	"bytes"
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	//	"encoding/json"
-	//	"fmt"
-	"bufio"
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
+	_ "odbc/driver"
 	"os"
-	//	"io/ioutil"
-	//	"log"
-	//	"net/http"
-	//	"net/url"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -66,7 +51,7 @@ func main() {
 	//	test2()
 	baseTime = time.Now()
 
-	var N = 10000
+	var N = 10
 	sem := make(chan string, N)
 	for i := 0; i < N; i++ {
 		//		fmt.Println("index:", i)
@@ -284,7 +269,7 @@ func reserve_redis_client_pool() {
 
 	for i := 0; i < redisCount; i++ {
 
-		client, err := redis.Dial("tcp", "138.128.192.237:6379")
+		client, err := redis.Dial("tcp", "127.0.0.1:6379")
 		if err != nil {
 			fmt.Println("failed to create redis-client:", err.Error())
 			os.Exit(1)
