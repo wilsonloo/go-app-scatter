@@ -55,64 +55,64 @@ func main() {
 	subdur := tnow.Sub(tmptime)
 	fmt.Printf("subdur: %f,%s ", subdur.Nanoseconds(), tmptime, " ")
 	datastr := fmt.Sprintf("%d%d%d%d%d%d", tnow.Year(), tnow.Month(), tnow.Day(), tnow.Hour(), tnow.Minute(), tnow.Second())
-	/*
-		   	fmt.Println(time.Now().Format("2006-01-02_15:04:05"), "   ", datastr)
-		   	//	test0()
-		   	//	test1()rtrim(cast(data as CHAR(200))) as datacopy
-		   	//	returndata := openDbString("select top 1 rtrim(cast(data as CHAR(200))) as datacopy,data from ATRes ")
-		   	//	fmt.Println("result:", returndata)
-		   	//openDbString("select code,data,CONVERT(CHAR(23), createtime, 121) as createtime,CONVERT(CHAR(23), updatetime, 121) as updatetime,groupCode,title,seq,valid,commentCount from ATRes ")
-		   	CFTablesMap = loadConfig()
-		   	//	test2()
-		   	baseTime = time.Now()
 
-			var N = 10000
-		   	sem := make(chan string, N)
-		   	for i := 0; i < N; i++ {
-		   		//		fmt.Println("index:", i)
-		   		//		testLoginAndPost(i)
-		   		go func(index int) {
+	fmt.Println(time.Now().Format("2006-01-02_15:04:05"), "   ", datastr)
+	//	test0()
+	//	test1()rtrim(cast(data as CHAR(200))) as datacopy
+	//	returndata := openDbString("select top 1 rtrim(cast(data as CHAR(200))) as datacopy,data from ATRes ")
+	//	fmt.Println("result:", returndata)
+	//openDbString("select code,data,CONVERT(CHAR(23), createtime, 121) as createtime,CONVERT(CHAR(23), updatetime, 121) as updatetime,groupCode,title,seq,valid,commentCount from ATRes ")
+	CFTablesMap = loadConfig()
+	//	test2()
+	baseTime = time.Now()
 
-		   			tnow := time.Now()
-		   			starttimeint := (int)(tnow.Sub(baseTime).Seconds() * 1000000)
+	var N = 10000
+	sem := make(chan string, N)
+	for i := 0; i < N; i++ {
+		//		fmt.Println("index:", i)
+		//		testLoginAndPost(i)
+		go func(index int) {
 
-		   			fmt.Println("index:", index)
+			tnow := time.Now()
+			starttimeint := (int)(tnow.Sub(baseTime).Seconds() * 1000000)
 
-		   			///////////////////////////////////////
-		               TestMutexSpinLock()
+			fmt.Println("index:", index)
 
-		   			///////////////////////////////////////
-		   			tmptime := time.Now()
-		   			subdur := tmptime.Sub(tnow)
-		   			tmpint := (int)(subdur.Seconds() * 1000)
-		   			fmt.Printf("subdur:  ", tmpint)
-		   			//			sem <- (fmt.Sprintf("%s,%d", tnow.Format("2006-01-02_15:04:05"), tmpint))
-		   			//			sem <- (fmt.Sprintf("'%d:%d',%d", tnow.Minute(), tnow.Second(), tmpint))
-		   			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
-		   		}(i)
-		   	}
-		   	//	var max = 0
-		   	outString := "["
-		   	for m := 0; m < N; m++ {
-		   		//		<-sem
-		   		tmp := <-sem
-		   		//		if tmp > max {
-		   		//			max = tmp
-		  		//		}
-		   		fmt.Println("FdMap:", tmp)
-		   		//		outString += fmt.Sprintf("[%d,%d]", m%50, tmp)
-		   		outString += fmt.Sprintf("[%s]", tmp)
-		   		if m == N-1 {
+			///////////////////////////////////////
+			TestMutexSpinLock()
 
-		   		} else {
-		   			outString += ","
-		   		}
-		   	}
-		   	outString += "]"
-		   	// fmt.Println("max:", outString)
-		   	//	writeFileWithData(".config/data.json", outString, N)
-		   	writeFileWithData("./config/output.html", outString, N)
-	*/
+			///////////////////////////////////////
+			tmptime := time.Now()
+			subdur := tmptime.Sub(tnow)
+			tmpint := (int)(subdur.Seconds() * 1000)
+			fmt.Printf("subdur:  ", tmpint)
+			//			sem <- (fmt.Sprintf("%s,%d", tnow.Format("2006-01-02_15:04:05"), tmpint))
+			//			sem <- (fmt.Sprintf("'%d:%d',%d", tnow.Minute(), tnow.Second(), tmpint))
+			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
+		}(i)
+	}
+	//	var max = 0
+	outString := "["
+	for m := 0; m < N; m++ {
+		//		<-sem
+		tmp := <-sem
+		//		if tmp > max {
+		//			max = tmp
+		//		}
+		fmt.Println("FdMap:", tmp)
+		//		outString += fmt.Sprintf("[%d,%d]", m%50, tmp)
+		outString += fmt.Sprintf("[%s]", tmp)
+		if m == N-1 {
+
+		} else {
+			outString += ","
+		}
+	}
+	outString += "]"
+	// fmt.Println("max:", outString)
+	//	writeFileWithData(".config/data.json", outString, N)
+	writeFileWithData("./config/output.html", outString, N)
+
 }
 
 // 封装测试数据
@@ -283,15 +283,10 @@ func Substr(str string, start, length int) string {
 func reserve_redis_client_pool() {
 
 	for i := 0; i < redisCount; i++ {
-		redis
-		client := redis.NewClient(&redis.Options{
-			Addr:     fmt.Sprintf("127.0.0.1:6379"),
-			Password: "",
-			DB:       redisDb,
-		})
 
-		if client != nil {
-			fmt.Println("failed to create redis-client")
+		client, err := redis.Dial("tcp", "138.128.192.237:6379")
+		if err != nil {
+			fmt.Println("failed to create redis-client:", err.Error())
 			os.Exit(1)
 		}
 
@@ -303,18 +298,19 @@ func reserve_redis_client_pool() {
 func TestMutexSpinLock() {
 
 	client := pop_redis_client()
-	if !client {
+	if client == nil {
 		fmt.Println("failed to pop new client")
 		os.Exit(1)
 	}
 
-	cal := 1
-	cal++
+	for i := 0; i < 100; i++ {
 
-	push_redis_client()
+	}
+
+	push_redis_client(client)
 }
 
-func pop_redis_client() bool {
+func pop_redis_client() *redis.Conn {
 	reIDsMutex.Lock()
 	defer reIDsMutex.Unlock()
 
@@ -322,32 +318,26 @@ func pop_redis_client() bool {
 		reserve_redis_client_pool()
 	}
 
-	client := reIDsClients.Front().Value.(*redis.Client)
+	conn := reIDsClients.Front().Value.(*redis.Conn)
 	reIDsClients.Remove(reIDsClients.Front())
 
-	return true
+	return conn
 }
 
-func push_redis_client() {
+func push_redis_client(client *redis.Conn) {
 	reIDsMutex.Lock()
 	defer reIDsMutex.Unlock()
 
-	for i := 0; i < 10000; i++ {
-		k := 3
-		k++
+	reIDsClients.PushBack(client)
+
+	if redisCount > 100 && reIDsClients.Len() >= (redisCount*3/4) {
+		count := redisCount / 2
+		for i := 0; i < count && reIDsClients.Len() > 1; i++ {
+			client := reIDsClients.Front().Value.(*redis.Conn)
+			reIDsClients.Remove(reIDsClients.Front())
+			(*client).Close()
+		}
+
+		redisCount -= count
 	}
-
-	/*
-		reIDsClients.PushBack(client)
-
-		if redisCount > 100 && reIDsClients.Len() >= (redisCount*3/4) {
-			count := redisCount / 2
-			for i := 0; i < count && reIDsClients.Len() > 1; i++ {
-				client := reIDsClients.Front().Value.(*redis.Client)
-				reIDsClients.Remove(reIDsClients.Front())
-				client.Close()
-			}
-
-			redisCount -= count
-		}*/
 }
