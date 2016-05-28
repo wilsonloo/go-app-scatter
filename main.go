@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -16,6 +17,9 @@ var baseTime time.Time
 // 使用 channel 自带的阻塞机制实现 连接池，替代cpp的信号量机制
 var redis_conn_pool chan redis.Conn
 
+// 进行扩充连接数的互斥锁
+var reserve_mutex sync.Mutex
+
 var (
 	// 最大连接数
 	LimitRedisConns = 1000
@@ -26,6 +30,8 @@ var (
 
 func InitTestMutexSpinLock() {
 	redis_conn_pool = make(chan redis.Conn, LimitRedisConns)
+
+	reserve_redis_client_pool(4)
 }
 
 func reserve_redis_client_pool(new_count int) {
@@ -66,8 +72,16 @@ func TestMutexSpinLock(val int) {
 
 func pop_redis_client() redis.Conn {
 
-	if len(redis_conn_pool) == 0 && total_working_conns < LimitRedisConns {
-		reserve_redis_client_pool(total_working_conns)
+	if len(redis_conn_pool) == 0 {
+		// 进行扩充
+
+		reserve_mutex.Lock()
+		defer reserve_mutex.Unlock()
+
+		// 多协程会竞争下面的 total_working_conss 的检测判断，为了保证一致性，在此之前用Mutex
+		if total_working_conns < LimitRedisConns {
+			reserve_redis_client_pool(total_working_conns)
+		}
 	}
 
 	conn := <-redis_conn_pool
