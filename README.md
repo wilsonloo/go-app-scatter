@@ -1,12 +1,13 @@
-# go-post-scatter
-	go http post echarts scatter 
-	golang 并发测试 http post 并使用echarts输出表表统计运行时间
+# go-app-scatter
+	go http app echarts scatter 
+	golang 并发测试操作并使用echarts输出表表统计运行时间
+	
 ##目录介绍
-	运行Client生成并发报表 分析基本每次连接执行时间
-	out 输出目录
+	运行app生成并发报表 分析基本每次运行执行时间
+	out 结果统计输出目录 可在config/download.config 修改保存目录
 	config 配置目录
 
-	golang代码修改
+	golang代码修改，可添加自己的测试
 	修改config文件夹里面的config/output.html里面需要替换的内容 用%s代替
 
 

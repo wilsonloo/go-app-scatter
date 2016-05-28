@@ -114,7 +114,7 @@ func main() {
 	InitTestMutexSpinLock()
 	//////////////////////////////////////
 
-	var N = 9000
+	var N = 900
 	sem := make(chan string, N)
 	for i := 0; i < N; i++ {
 		go func(index int) {

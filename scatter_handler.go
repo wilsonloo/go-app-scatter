@@ -114,7 +114,7 @@ func writeFileWithData(filename string, data string, n int) {
 		}
 	}
 
-	dirPath := "out"
+	dirPath := CFTablesMap["out_dir"].(string)
 	errdir := os.Mkdir(dirPath, 0)
 	if errdir != nil {
 		fmt.Println(errdir.Error())
