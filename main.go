@@ -1,13 +1,9 @@
 package main
 
 import (
-	"sync"
-	"time"
-
 	"fmt"
-
-	"container/list"
 	"os"
+	"time"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -17,20 +13,24 @@ var CFTablesMap map[string]interface{} // {}为初始化成空
 var baseTime time.Time
 
 ///////////////////////////////////////////////////
-
-var reIDsMutex sync.Mutex
-var redis_conn_pool list.List
-var deleting_conn list.List
+// 使用 channel 自带的阻塞机制实现 连接池，替代cpp的信号量机制
+var redis_conn_pool chan redis.Conn
 
 var (
-	total_redis_conns = 0
+	// 最大连接数
+	LimitRedisConns = 1000
+
+	// 当前工作中的连接数
+	total_working_conns = 0
 )
 
-///////////////////////////////////////////////////
+func InitTestMutexSpinLock() {
+	redis_conn_pool = make(chan redis.Conn, LimitRedisConns)
+}
 
 func reserve_redis_client_pool(new_count int) {
 
-	for i := 0; i < new_count; i++ {
+	for i := 0; i < new_count && total_working_conns < LimitRedisConns; i++ {
 
 		client, err := redis.Dial("tcp", "127.0.0.1:6379")
 		if err != nil {
@@ -38,10 +38,10 @@ func reserve_redis_client_pool(new_count int) {
 			os.Exit(1)
 		}
 
-		redis_conn_pool.PushBack(client)
+		redis_conn_pool <- client
+		total_working_conns++
 	}
 
-	total_redis_conns += new_count
 }
 
 func TestMutexSpinLock(val int) {
@@ -64,45 +64,35 @@ func TestMutexSpinLock(val int) {
 	}
 }
 
-func InitTestMutexSpinLock() {
-	reserve_redis_client_pool(4)
-}
-
 func pop_redis_client() redis.Conn {
-	reIDsMutex.Lock()
-	defer reIDsMutex.Unlock()
 
-	// max 1000 redis connections
-	if redis_conn_pool.Len() == 0 && total_redis_conns < 1000 {
-		reserve_redis_client_pool(total_redis_conns)
+	if len(redis_conn_pool) == 0 && total_working_conns < LimitRedisConns {
+		reserve_redis_client_pool(total_working_conns)
 	}
 
-	conn := redis_conn_pool.Front().Value.(redis.Conn)
-	redis_conn_pool.Remove(redis_conn_pool.Front())
+	conn := <-redis_conn_pool
 
 	return conn
 }
 
-func push_redis_client(client redis.Conn) {
-	reIDsMutex.Lock()
-	defer reIDsMutex.Unlock()
+func push_redis_client(conn redis.Conn) {
 
-	redis_conn_pool.PushBack(client)
+	redis_conn_pool <- conn
 
 	fmt.Printf("total_redis_conns: %d, redis_conn_pool size: %d, therold: %d\n",
-		total_redis_conns, redis_conn_pool.Len(), total_redis_conns*3/4)
+		total_working_conns, len(redis_conn_pool), total_working_conns*3/4)
 
 	// 移除多余连接
-	if total_redis_conns > 100 && redis_conn_pool.Len() >= (total_redis_conns*3/4) {
-		count := total_redis_conns / 2
-		for i := 0; i < count && redis_conn_pool.Len() > 1; i++ {
-			client := redis_conn_pool.Front().Value.(redis.Conn)
-			redis_conn_pool.Remove(redis_conn_pool.Front())
-			fmt.Println("==================================")
+	if total_working_conns > 100 && len(redis_conn_pool) >= (total_working_conns*3/4) {
+		count := total_working_conns / 2
+		for i := 0; i < count && len(redis_conn_pool) > 1; i++ {
+
+			client := <-redis_conn_pool
 			client.Close()
+
+			total_working_conns--
 		}
 
-		total_redis_conns -= count
 	}
 }
 
@@ -138,7 +128,7 @@ func main() {
 			subdur := tmptime.Sub(tnow)
 			tmpint := (int)(subdur.Seconds() * 1000)
 			fmt.Println("index: ", index, "consumed: ", tmpint)
-			fmt.Println("pool size is", total_redis_conns)
+			fmt.Println("pool size is", total_working_conns)
 
 			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
 		}(i)
