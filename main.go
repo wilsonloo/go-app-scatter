@@ -20,6 +20,7 @@ var baseTime time.Time
 
 var reIDsMutex sync.Mutex
 var redis_conn_pool list.List
+var deleting_conn list.List
 
 var (
 	total_redis_conns = 0
@@ -51,7 +52,9 @@ func TestMutexSpinLock(val int) {
 		os.Exit(1)
 	}
 	defer func() {
+		// todo just test max connection :
 		push_redis_client(client)
+		// deleting_conn.PushBack(client)
 	}()
 
 	_, err := client.Do("LPUSH", "my_list", val)
@@ -69,7 +72,8 @@ func pop_redis_client() redis.Conn {
 	reIDsMutex.Lock()
 	defer reIDsMutex.Unlock()
 
-	if redis_conn_pool.Len() == 0 {
+	// max 1000 redis connections
+	if redis_conn_pool.Len() == 0 && total_redis_conns < 1000 {
 		reserve_redis_client_pool(total_redis_conns)
 	}
 
@@ -85,12 +89,16 @@ func push_redis_client(client redis.Conn) {
 
 	redis_conn_pool.PushBack(client)
 
+	fmt.Printf("total_redis_conns: %d, redis_conn_pool size: %d, therold: %d\n",
+		total_redis_conns, redis_conn_pool.Len(), total_redis_conns*3/4)
+
 	// 移除多余连接
 	if total_redis_conns > 100 && redis_conn_pool.Len() >= (total_redis_conns*3/4) {
 		count := total_redis_conns / 2
 		for i := 0; i < count && redis_conn_pool.Len() > 1; i++ {
 			client := redis_conn_pool.Front().Value.(redis.Conn)
 			redis_conn_pool.Remove(redis_conn_pool.Front())
+			fmt.Println("==================================")
 			client.Close()
 		}
 
@@ -114,7 +122,7 @@ func main() {
 	InitTestMutexSpinLock()
 	//////////////////////////////////////
 
-	var N = 900
+	var N = 10000
 	sem := make(chan string, N)
 	for i := 0; i < N; i++ {
 		go func(index int) {
@@ -130,6 +138,8 @@ func main() {
 			subdur := tmptime.Sub(tnow)
 			tmpint := (int)(subdur.Seconds() * 1000)
 			fmt.Println("index: ", index, "consumed: ", tmpint)
+			fmt.Println("pool size is", total_redis_conns)
+
 			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
 		}(i)
 	}
