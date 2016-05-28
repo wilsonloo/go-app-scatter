@@ -114,7 +114,7 @@ func main() {
 	InitTestMutexSpinLock()
 	//////////////////////////////////////
 
-	var N = 90
+	var N = 900
 	sem := make(chan string, N)
 	for i := 0; i < N; i++ {
 		go func(index int) {
@@ -129,7 +129,7 @@ func main() {
 			tmptime := time.Now()
 			subdur := tmptime.Sub(tnow)
 			tmpint := (int)(subdur.Seconds() * 1000)
-			fmt.Println("subdur:  ", tmpint)
+			fmt.Println("index: ", index, "consumed: ", tmpint)
 			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
 		}(i)
 	}
