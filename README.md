@@ -12,14 +12,15 @@
 
 
 ##修改扩展
-	由于连接的是自己的golang服务器，
-	需要修改链接的服务器地址，
-	和修改代码里面http传输的内容修改才能实现
-	修改getPostUploadResData方法
-	修改postLoginTest登录测试
+	
+##测试结果
+## 预先创建好大小为1000的 redis静态连接池，并发10000 的LPUSH操作，可在 0.7 秒内完成；
+## 3  Intel(R) Xeon(R) CPU           X5650  @ 2.67GHz
+## CPU、内存、网络吞吐量还未做详细统计
+## 代码版本号为 7ed0e05c56779c0901200e98b671d74e2ff50dc6
+
 ##测试scatter图链接
 
-* [1000并发图](http://jixieshi999.github.io/go-post-scatter/1000-20150630_105032.html)
-* [200并发图](http://jixieshi999.github.io/go-post-scatter/200-20150630_104709.html)
+* [10000 并发图](http://138.128.192.237:30300/10000-20160528_070201.html)
 
 
