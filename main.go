@@ -23,20 +23,17 @@ var reserve_mutex sync.Mutex
 var (
 	// 最大连接数
 	LimitRedisConns = 1000
-
-	// 当前工作中的连接数
-	total_working_conns = 0
 )
 
 func InitTestMutexSpinLock() {
 	redis_conn_pool = make(chan redis.Conn, LimitRedisConns)
 
-	reserve_redis_client_pool(4)
+	reserve_redis_client_pool(LimitRedisConns)
 }
 
 func reserve_redis_client_pool(new_count int) {
 
-	for i := 0; i < new_count && total_working_conns < LimitRedisConns; i++ {
+	for i := 0; i < new_count; i++ {
 
 		client, err := redis.Dial("tcp", "127.0.0.1:6379")
 		if err != nil {
@@ -45,68 +42,25 @@ func reserve_redis_client_pool(new_count int) {
 		}
 
 		redis_conn_pool <- client
-		total_working_conns++
 	}
 
 }
 
 func TestMutexSpinLock(val int) {
 
-	client := pop_redis_client()
-	if client == nil {
+	conn := <-redis_conn_pool
+	if conn == nil {
 		fmt.Println("failed to pop new client")
 		os.Exit(1)
 	}
 	defer func() {
-		// todo just test max connection :
-		push_redis_client(client)
-		// deleting_conn.PushBack(client)
+		redis_conn_pool <- conn
 	}()
 
-	_, err := client.Do("LPUSH", "my_list", val)
+	_, err := conn.Do("LPUSH", "my_list", val)
 	if err != nil {
 		fmt.Println("failed:", err)
 		return
-	}
-}
-
-func pop_redis_client() redis.Conn {
-
-	if len(redis_conn_pool) == 0 {
-		// 进行扩充
-
-		reserve_mutex.Lock()
-		defer reserve_mutex.Unlock()
-
-		// 多协程会竞争下面的 total_working_conss 的检测判断，为了保证一致性，在此之前用Mutex
-		if total_working_conns < LimitRedisConns {
-			reserve_redis_client_pool(total_working_conns)
-		}
-	}
-
-	conn := <-redis_conn_pool
-
-	return conn
-}
-
-func push_redis_client(conn redis.Conn) {
-
-	redis_conn_pool <- conn
-
-	fmt.Printf("total_redis_conns: %d, redis_conn_pool size: %d, therold: %d\n",
-		total_working_conns, len(redis_conn_pool), total_working_conns*3/4)
-
-	// 移除多余连接
-	if total_working_conns > 100 && len(redis_conn_pool) >= (total_working_conns*3/4) {
-		count := total_working_conns / 2
-		for i := 0; i < count && len(redis_conn_pool) > 1; i++ {
-
-			client := <-redis_conn_pool
-			client.Close()
-
-			total_working_conns--
-		}
-
 	}
 }
 
@@ -142,7 +96,6 @@ func main() {
 			subdur := tmptime.Sub(tnow)
 			tmpint := (int)(subdur.Seconds() * 1000)
 			fmt.Println("index: ", index, "consumed: ", tmpint)
-			fmt.Println("pool size is", total_working_conns)
 
 			sem <- (fmt.Sprintf("%d,%d", starttimeint, tmpint))
 		}(i)
